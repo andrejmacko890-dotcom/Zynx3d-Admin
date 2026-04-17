@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZYNX3D Admin</title>
+  <style>
+    :root {
+      --bg: #f6f9fc;
+      --card: #ffffff;
+      --text: #122235;
+      --muted: #6c7b8c;
+      --line: #d9e5ee;
+      --primary: #2563eb;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --shadow: 0 18px 40px rgba(16,33,51,.08);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: #f6f9fc;
+      color: var(--text);
+    }
+    .container {
+      width: min(1160px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+    }
+    .header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom: 18px;
+    }
+    .brand {
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-size: 1rem;
+    }
+    .brand span { color: var(--primary); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+    .grid {
+      display:grid;
+      gap:18px;
+    }
+    .grid-2 {
+      grid-template-columns: 1.05fr .95fr;
+    }
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0,1fr));
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: white;
+      font: inherit;
+      color: var(--text);
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    .two-col {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:46px;
+      padding:0 16px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:#fff;
+      font-weight:700;
+      cursor:pointer;
+      color: var(--text);
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--primary), #4b82f3);
+      color:white;
+      border-color: transparent;
+    }
+    .btn.small {
+      min-height: 38px;
+      border-radius: 12px;
+      padding: 0 12px;
+      font-size: .9rem;
+    }
+    .stats {
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap:12px;
+      margin-bottom: 18px;
+    }
+    .stat {
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
+    }
+    .stat strong {
+      display:block;
+      font-size:1.4rem;
+      margin-bottom:4px;
+    }
+    .stat span { color: var(--muted); font-size:.92rem; }
+    .helper { color: var(--muted); font-size: .92rem; }
+    .message {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: .95rem;
+      display:none;
+    }
+    .message.show { display:block; }
+    .success { background:#ecfdf5; border:1px solid #86efac; }
+    .error { background:#fef2f2; border:1px solid #fca5a5; }
+    .warning { background:#fffbeb; border:1px solid #fcd34d; }
+    table {
+      width:100%;
+      border-collapse: collapse;
+      font-size:.95rem;
+    }
+    th, td {
+      text-align:left;
+      padding:12px 10px;
+      border-bottom:1px solid var(--line);
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight:700; }
+    .hidden { display:none !important; }
+    .status-badge {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:.8rem;
+      font-weight:800;
+      border:1px solid var(--line);
+      background:#f8fbfd;
+    }
+    .status-dot {
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:#94a3b8;
+    }
+    .ready .status-dot { background: var(--success); }
+    .busy .status-dot { background: var(--warning); }
+    .error-state .status-dot { background: var(--danger); }
+    .printer-grid {
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:14px;
+    }
+    .printer-card {
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
+      background:#fff;
+    }
+    .printer-actions {
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    @media (max-width: 980px) {
+      .grid-2, .grid-4, .stats, .two-col, .printer-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">ZYNX<span>3D</span> Admin</div>
+      <div>
+        <button id="refreshBtn" class="btn hidden" type="button">Obnoviť</button>
+        <button id="logoutBtn" class="btn hidden" type="button">Odhlásiť sa</button>
+      </div>
+    </div>
+
+    <div class="card" id="loginCard">
+      <h2 style="margin-top:0;">Prihlásenie</h2>
+      <p class="helper">Interný systém na prehľad dopytov, objednávok a stavu tlačiarní.</p>
+      <div class="two-col">
+        <input type="email" id="loginEmail" placeholder="Admin e-mail" required>
+        <input type="password" id="loginPassword" placeholder="Heslo" required>
+      </div>
+      <div style="margin-top:12px;">
+        <button id="loginBtn" class="btn primary" type="button">Prihlásiť sa</button>
+      </div>
+      <div id="loginMessage" class="message"></div>
+    </div>
+
+    <div id="app" class="hidden">
+      <div class="stats">
+        <div class="stat"><strong id="statInquiries">0</strong><span>dopyty</span></div>
+        <div class="stat"><strong id="statOrders">0</strong><span>objednávky</span></div>
+        <div class="stat"><strong id="statReady">0</strong><span>voľné tlačiarne</span></div>
+        <div class="stat"><strong id="statBusy">0</strong><span>obsadené tlačiarne</span></div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="grid">
+          <div class="card">
+            <h3 style="margin-top:0;">Posledné dopyty</h3>
+            <div style="overflow:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Firma</th>
+                    <th>Projekt</th>
+                    <th>Služba</th>
+                    <th>Termín</th>
+                  </tr>
+                </thead>
+                <tbody id="inquiriesBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0;">Nová objednávka</h3>
+            <form id="orderForm">
+              <div class="two-col">
+                <input type="text" id="orderCode" placeholder="Kód objednávky (napr. ZYNX-001)" required>
+                <input type="text" id="orderTitle" placeholder="Názov objednávky" required>
+              </div>
+              <div class="two-col">
+                <input type="text" id="orderClient" placeholder="Klient / firma" required>
+                <select id="orderStatus" required>
+                  <option value="nova">Nová</option>
+                  <option value="pripravena">Pripravená</option>
+                  <option value="tlaci_sa">Tlačí sa</option>
+                  <option value="hotove">Hotové</option>
+                  <option value="odoslane">Odoslané</option>
+                </select>
+              </div>
+              <div class="two-col">
+                <input type="text" id="orderPrinter" placeholder="Priradená tlačiareň (napr. P1S-01)">
+                <input type="text" id="orderDueDate" placeholder="Termín">
+              </div>
+              <textarea id="orderNotes" placeholder="Poznámka k objednávke"></textarea>
+              <button class="btn primary" type="submit">Uložiť objednávku</button>
+            </form>
+            <div id="orderMessage" class="message"></div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h3 style="margin-top:0;">Tlačiarenská farma</h3>
+            <p class="helper">Každá tlačiareň má vlastný panel URL. Jedným klikom ho otvoríš a zároveň si vieš zmeniť interný stav tlačiarne.</p>
+            <div id="printersGrid" class="printer-grid"></div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0;">Posledné objednávky</h3>
+            <div style="overflow:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Kód</th>
+                    <th>Klient</th>
+                    <th>Stav</th>
+                    <th>Tlačiareň</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const loginCard = document.getElementById('loginCard');
+    const app = document.getElementById('app');
+    const loginMessage = document.getElementById('loginMessage');
+    const orderMessage = document.getElementById('orderMessage');
+    const inquiriesBody = document.getElementById('inquiriesBody');
+    const ordersBody = document.getElementById('ordersBody');
+    const printersGrid = document.getElementById('printersGrid');
+    const orderForm = document.getElementById('orderForm');
+
+    function setMessage(el, type, text) {
+      el.className = `message show ${type}`;
+      el.textContent = text;
+    }
+
+    function clearMessage(el) {
+      el.className = 'message';
+      el.textContent = '';
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    async function login() {
+      clearMessage(loginMessage);
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setMessage(loginMessage, 'error', `Prihlásenie zlyhalo: ${error.message}`);
+        return;
+      }
+
+      loginCard.classList.add('hidden');
+      app.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+      refreshBtn.classList.remove('hidden');
+      await loadDashboard();
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      app.classList.add('hidden');
+      loginCard.classList.remove('hidden');
+      logoutBtn.classList.add('hidden');
+      refreshBtn.classList.add('hidden');
+      setMessage(loginMessage, 'warning', 'Odhlásený.');
+    }
+
+    async function loadDashboard() {
+      await Promise.all([loadInquiries(), loadOrders(), loadPrinters(), loadStats()]);
+    }
+
+    async function loadInquiries() {
+      const { data, error } = await supabase
+        .from('inquiries')
+        .select('id, company_name, title, service_type, deadline')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        inquiriesBody.innerHTML = `<tr><td colspan="5">${escapeHtml(error.message)}</td></tr>`;
+        return;
+      }
+
+      if (!data?.length) {
+        inquiriesBody.innerHTML = '<tr><td colspan="5">Zatiaľ žiadne dopyty.</td></tr>';
+        return;
+      }
+
+      inquiriesBody.innerHTML = data.map(item => `
+        <tr>
+          <td>#${item.id}</td>
+          <td>${escapeHtml(item.company_name)}</td>
+          <td>${escapeHtml(item.title)}</td>
+          <td>${escapeHtml(item.service_type)}</td>
+          <td>${escapeHtml(item.deadline || '—')}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadOrders() {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('order_code, client_name, status, assigned_printer')
+        .order('id', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        ordersBody.innerHTML = `<tr><td colspan="4">${escapeHtml(error.message)}</td></tr>`;
+        return;
+      }
+
+      if (!data?.length) {
+        ordersBody.innerHTML = '<tr><td colspan="4">Zatiaľ žiadne objednávky.</td></tr>';
+        return;
+      }
+
+      ordersBody.innerHTML = data.map(item => `
+        <tr>
+          <td>${escapeHtml(item.order_code)}</td>
+          <td>${escapeHtml(item.client_name)}</td>
+          <td>${escapeHtml(item.status)}</td>
+          <td>${escapeHtml(item.assigned_printer || '—')}</td>
+        </tr>
+      `).join('');
+    }
+
+    function printerStatusClass(status) {
+      if (status === 'ready') return 'ready';
+      if (status === 'busy') return 'busy';
+      if (status === 'error') return 'error-state';
+      return '';
+    }
+
+    async function updatePrinterStatus(id, status) {
+      const { error } = await supabase.from('printers').update({ status }).eq('id', id);
+      if (error) {
+        alert(`Chyba pri zmene stavu tlačiarne: ${error.message}`);
+        return;
+      }
+      await loadDashboard();
+    }
+
+    async function loadPrinters() {
+      const { data, error } = await supabase
+        .from('printers')
+        .select('id, name, type, ip_address, panel_url, status, note')
+        .order('id', { ascending: true });
+
+      if (error) {
+        printersGrid.innerHTML = `<div class="message show error">${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      if (!data?.length) {
+        printersGrid.innerHTML = '<div class="message show warning">Zatiaľ nemáš žiadne tlačiarne v tabuľke printers.</div>';
+        return;
+      }
+
+      printersGrid.innerHTML = data.map(printer => `
+        <div class="printer-card">
+          <div style="display:flex; justify-content:space-between; gap:10px; align-items:start;">
+            <div>
+              <strong>${escapeHtml(printer.name)}</strong><br>
+              <span class="helper">${escapeHtml(printer.type || '')}</span>
+            </div>
+            <span class="status-badge ${printerStatusClass(printer.status)}"><span class="status-dot"></span>${escapeHtml(printer.status || 'unknown')}</span>
+          </div>
+          <div class="helper" style="margin-top:8px;">IP: ${escapeHtml(printer.ip_address || '—')}</div>
+          <div class="helper">${escapeHtml(printer.note || '')}</div>
+          <div class="printer-actions">
+            ${printer.panel_url ? `<a class="btn small" href="${escapeHtml(printer.panel_url)}" target="_blank" rel="noopener noreferrer">Otvoriť panel</a>` : ''}
+            <button class="btn small" type="button" data-printer-id="${printer.id}" data-status="ready">Voľná</button>
+            <button class="btn small" type="button" data-printer-id="${printer.id}" data-status="busy">Obsadená</button>
+            <button class="btn small" type="button" data-printer-id="${printer.id}" data-status="error">Chyba</button>
+          </div>
+        </div>
+      `).join('');
+
+      printersGrid.querySelectorAll('button[data-printer-id]').forEach(btn => {
+        btn.addEventListener('click', () => updatePrinterStatus(btn.dataset.printerId, btn.dataset.status));
+      });
+    }
+
+    async function loadStats() {
+      const [inqRes, orderRes, printerRes] = await Promise.all([
+        supabase.from('inquiries').select('*', { count: 'exact', head: true }),
+        supabase.from('orders').select('*', { count: 'exact', head: true }),
+        supabase.from('printers').select('status')
+      ]);
+
+      document.getElementById('statInquiries').textContent = inqRes.count ?? 0;
+      document.getElementById('statOrders').textContent = orderRes.count ?? 0;
+
+      const printerStatuses = printerRes.data || [];
+      document.getElementById('statReady').textContent = printerStatuses.filter(p => p.status === 'ready').length;
+      document.getElementById('statBusy').textContent = printerStatuses.filter(p => p.status === 'busy').length;
+    }
+
+    orderForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      clearMessage(orderMessage);
+
+      const payload = {
+        order_code: document.getElementById('orderCode').value.trim(),
+        title: document.getElementById('orderTitle').value.trim(),
+        client_name: document.getElementById('orderClient').value.trim(),
+        status: document.getElementById('orderStatus').value,
+        assigned_printer: document.getElementById('orderPrinter').value.trim(),
+        due_date_text: document.getElementById('orderDueDate').value.trim(),
+        notes: document.getElementById('orderNotes').value.trim()
+      };
+
+      const { error } = await supabase.from('orders').insert([payload]);
+      if (error) {
+        setMessage(orderMessage, 'error', `Chyba pri ukladaní objednávky: ${error.message}`);
+        return;
+      }
+
+      orderForm.reset();
+      setMessage(orderMessage, 'success', 'Objednávka bola uložená.');
+      await loadDashboard();
+    });
+
+    async function restoreSession() {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        loginCard.classList.add('hidden');
+        app.classList.remove('hidden');
+        logoutBtn.classList.remove('hidden');
+        refreshBtn.classList.remove('hidden');
+        await loadDashboard();
+      }
+    }
+
+    loginBtn.addEventListener('click', login);
+    logoutBtn.addEventListener('click', logout);
+    refreshBtn.addEventListener('click', loadDashboard);
+
+    restoreSession();
+  </script>
+</body>
+</html>
